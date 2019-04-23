@@ -1,10 +1,11 @@
 (ns workshop.core
-  (:require [devcards.core :as dc :include-macros true]
-            ["react" :as react]
-            ["react-dom" :as react-dom]
-            [hx.react :as hx]
-            [hx.hooks :as hooks]
-            ["scheduler" :as scheduler]))
+  (:require 
+    [devcards.core :as dc :include-macros true]
+    ["react" :as react]
+    ["react-dom" :as react-dom]
+    [hx.react :as hx]
+    [hx.hooks :as hooks]
+    ["scheduler" :as scheduler]))
 
 (defn Example [props]
   (react/createElement "div" nil (prn-str props)))
@@ -16,8 +17,8 @@
 
 (hx/defnc DefncExample [{:keys [foo children]}]
   [:<>
-   [:div "mm"]
-   [:div foo]
+   [:div.mami.cu.ti {:id "nisam"} "mm"]
+   [:div {:id "hio" :class "hoho"} foo]
    (let [x 1
          y 2]
      [:div (+ x y)])
@@ -100,8 +101,8 @@
 (def RefConsumer (react/forwardRef RefConsumer*))
 
 (hx/defnc RefProvider [_]
-  (def ref (react/createRef))
-  [RefConsumer {:ref ref :on-click #(println ref)}])
+  (let [ref (react/createRef)]
+    [RefConsumer {:ref ref :on-click #(println ref)}]))
 
 (dc/defcard ref
   (hx/$ RefProvider))

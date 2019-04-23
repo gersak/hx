@@ -1,6 +1,7 @@
 (ns hx.hiccup
-  (:require [clojure.walk :as walk]
-            [hx.utils :as util]))
+  (:require 
+    [clojure.walk :as walk]
+    [hx.utils :as util]))
 
 (defprotocol IElement
   (-parse-element [el config args] "Parses an element"))
@@ -30,6 +31,16 @@
 (defn ex [s]
   #?(:clj (Exception. s)
      :cljs (js/Error. s)))
+
+(defn parse-keyword [kw]
+  (let [w (name kw)
+        [tag & attributes] (clojure.string/split w #"#|\.")]
+    (if (some #{"#"} w)
+      {:tag tag
+       :id (first attributes)
+       :classes  (rest attributes)}
+      {:tag tag
+       :classes attributes})))
 
 (extend-protocol IElement
   nil
@@ -62,7 +73,35 @@
   #?(:clj clojure.lang.Keyword
      :cljs Keyword)
   (-parse-element [el config args]
-    (make-element config (name el) args))
+    (let [{:keys [tag id classes]} (parse-keyword el)
+          args' (cond-> args
+                  ;; If there is some id then insert that 
+                  ;; id into arguments
+                  (some? id) ((fn [[attrm & others :as args]]
+                                (cond
+                                  ;; Check if there was some argument map before
+                                  ;; and if not prepend new map
+                                  (string? attrm) (conj args {:id id}) 
+                                  ;; if attribute map already present than update
+                                  ;; current map
+                                  (map? attrm) 
+                                  (concat 
+                                    (list (assoc attrm :id id))
+                                    others)))) 
+                  (some? classes) ((fn [[attrm & others :as args]]
+                                     (cond
+                                       (string? attrm) 
+                                       (conj args {:class classes})
+                                       ;;
+                                       (map? attrm) 
+                                       (let [{c :class} attrm]
+                                         (concat 
+                                           (list (assoc attrm :class (cond
+                                                                       (nil? c) classes
+                                                                       (string? c) (conj classes c)
+                                                                       (seq? c) (concat c classes))))
+                                           others))))))] 
+      (make-element config tag args')))
 
   #?(:clj clojure.lang.AFn
      :cljs function)
